@@ -36,6 +36,19 @@ jobs:
 
       - name: Build with Gradle
         run: ./gradlew build -x test
+        
+      - name: Register test results as comments in PR
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        if: always()
+        with:
+          files: '**/build/test-results/test/TEST-*.xml'
+
+      - name: If the test fails, register a Check comment in the failed code line
+        uses: mikepenz/action-junit-report@v3
+        if: failure()
+        with:
+          report_paths: '**/build/test-results/test/TEST-*.xml'
+          token: ${{ github.token }}
 
   test:
     runs-on: ubuntu-latest
@@ -92,10 +105,15 @@ jobs:
           LOGSTASH_PORT: ${{ secrets.LOGSTASH_PORT }}
         run: ./gradlew test -Dspring.profiles.active=test
 
-      - name: Notify on success
-        if: success()
-        run: echo "All tests passed!"
+      - name: Register test results as comments in PR
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        if: always()
+        with:
+          files: '**/build/test-results/test/TEST-*.xml'
 
-      - name: Notify on failure
+      - name: If the test fails, register a Check comment in the failed code line
+        uses: mikepenz/action-junit-report@v3
         if: failure()
-        run: echo "Some tests failed!"
+        with:
+          report_paths: '**/build/test-results/test/TEST-*.xml'
+          token: ${{ github.token }}
