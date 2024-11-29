@@ -35,3 +35,9 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### private.yaml ###
+application-private.yaml
+
+### .env ###
+.env

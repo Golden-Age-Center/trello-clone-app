@@ -1,0 +1,6 @@
+# kibana/config/kibana.yml
+server.name: kibana
+server.host: "0"
+elasticsearch.hosts: ["http://elasticsearch:9200"]  # ElasticSearch 서버 정보
+elasticsearch.username: "viva"  # Elasticsearch 사용자 이름
+elasticsearch.password: "viva-test123"  # Elasticsearch 비밀번호

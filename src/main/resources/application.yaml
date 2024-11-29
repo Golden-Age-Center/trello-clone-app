@@ -1,22 +1,15 @@
 spring:
-  datasource:
-    url: jdbc:mysql://${DB_LINK}:${DB_PORT}/${DB_NAME}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        auto_quote_keyword: true
-        highlight_sql: true
-        show_sql: true
-        format_sql: true
+  profiles:
+    include: private
+    active: dev
 
-logging:
-  level:
-    org.hibernate.orm.jdbc.bind: trace
 jwt:
   secret:
     key: ${JWT_SECRET_KEY}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "prometheus"
+

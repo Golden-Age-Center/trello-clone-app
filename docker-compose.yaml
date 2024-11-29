@@ -1,0 +1,68 @@
+version: '3'
+services:
+  elasticsearch:
+    image: elasticsearch:7.17.3
+    container_name: elasticsearch
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+
+  logstash:
+    image: logstash:7.17.3
+    container_name: logstash
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./logstash/pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    depends_on:
+      - elasticsearch
+    environment:
+      - LOGSTASH_JAVA_OPTS="-Xms512m -Xmx512m"  # Logstash 메모리 설정
+      - PIPELINE_WORKERS=2  # 병렬 처리 워커 수
+      - PIPELINE_BATCH_SIZE=125  # 배치 크기
+      - PIPELINE_BATCH_DELAY=50
+
+  kibana:
+    image: kibana:7.17.3
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+  # Prometheus 설정
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+
+  # Grafana 설정
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  grafana_data:
+  es_data:

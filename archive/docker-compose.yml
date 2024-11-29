@@ -1,0 +1,136 @@
+version: "3.8"
+services:
+  redis-node-1:
+    env_file:
+      - ../.env
+    image: redis:latest
+    container_name: redis-node-1
+    networks:
+      - trello-network
+    ports:
+      - "${REDIS_NODE_PORT_1}:${REDIS_NODE_PORT_1}"
+    volumes:
+      - ./volumes/conf1/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  redis-node-2:
+    env_file:
+      - ../.env
+    image: redis:latest
+    container_name: redis-node-2
+    networks:
+      - trello-network
+    ports:
+      - "${REDIS_NODE_PORT_2}:${REDIS_NODE_PORT_2}"
+    volumes:
+      - ./volumes/conf2/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  redis-node-3:
+    env_file:
+      - ../.env
+    image: redis:latest
+    container_name: redis-node-3
+    networks:
+      - trello-network
+    ports:
+      - "${REDIS_NODE_PORT_3}:${REDIS_NODE_PORT_3}"
+    volumes:
+      - ./volumes/conf3/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  redis-node-4:
+    env_file:
+      - ../.env
+    image: redis:latest
+    container_name: redis-node-4
+    networks:
+      - trello-network
+    ports:
+      - "${REDIS_NODE_PORT_4}:${REDIS_NODE_PORT_4}"
+    volumes:
+      - ./volumes/conf4/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  redis-node-5:
+    env_file:
+      - ../.env
+    image: redis:latest
+    container_name: redis-node-5
+    networks:
+      - trello-network
+    ports:
+      - "${REDIS_NODE_PORT_5}:${REDIS_NODE_PORT_5}"
+    volumes:
+      - ./volumes/conf5/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  redis-node-6:
+    env_file:
+      - ../.env
+    image: redis:latest
+    container_name: redis-node-6
+    networks:
+      - trello-network
+    ports:
+      - "${REDIS_NODE_PORT_6}:${REDIS_NODE_PORT_6}"
+    volumes:
+      - ./volumes/conf6/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  redis-cluster:
+    env_file:
+      - ../.env
+    image: redis:latest
+    container_name: redis-cluster
+    networks:
+      - trello-network
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    depends_on:
+      - redis-node-1
+      - redis-node-2
+      - redis-node-3
+      - redis-node-4
+      - redis-node-5
+      - redis-node-6
+    volumes:
+      - ./volumes/sh/redis-cluster.sh:/usr/local/etc/redis/redis-cluster.sh
+    command: /bin/sh -c "sh /usr/local/etc/redis/redis-cluster.sh && tail -f /dev/null"
+# redis-cluster의 exec에 접근해서 아래 명령어 칠 것
+# redis-cli --cluster create redis-node-1:7000 redis-node-2:7001 redis-node-3:7002 redis-node-4:7003 redis-node-5:7004 redis-node-6:7005 --cluster-replicas 1 --cluster-yes
+
+  # http://localhost:5540/
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: redis-insight
+    networks:
+      - trello-network
+    ports:
+      - 5540:5540
+    depends_on:
+      - redis-cluster
+
+  app:
+    env_file:
+      - ../.env
+    container_name: spring-app
+    build:
+      context: ..
+      dockerfile: ../Dockerfile
+      args:
+        - SERVER_PORT=${SERVER_PORT}
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://${DB_LINK}:${DB_PORT}/${DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - trello-network
+    depends_on:
+      - redis-cluster
+
+networks:
+  trello-network:
+    driver: bridge

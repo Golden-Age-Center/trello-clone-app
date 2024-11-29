@@ -1,33 +1,51 @@
 package com.sparta.trelloproject.domain.board.entity;
 
 import com.sparta.trelloproject.common.entity.Timestamped;
+import com.sparta.trelloproject.domain.list.entity.Lists;
 import com.sparta.trelloproject.domain.workspace.entity.Workspace;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
-@Entity(name = "boards")
+import java.util.Set;
+
+@Entity
+@Table(name = "boards")
 @Getter
+@NoArgsConstructor
 public class Board extends Timestamped {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "제목은 공백이 들어올 수 없습니다")
+    @Column(nullable = false)
     private String title;
 
-    @NotBlank(message = "배경은 공백이 들어올 수 없습니다")
+    @Column(nullable = false)
     private String backgroundColor;
 
+    @NotNull
     @ManyToOne
-    @JoinColumn(name = "workspaces_id")
+    @JoinColumn(name = "workspaces_id", nullable = false)
     private Workspace workspace;
 
-    //test
+    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Lists> lists;
+
+    public static Board of(String title, String backgroundColor, Workspace workspace) {
+        Board board = new Board();
+        board.title = title;
+        board.backgroundColor = backgroundColor;
+        board.workspace = workspace;
+        return board;
+    }
+
+    public void update(String title, String backgroundColor) {
+        this.title = title;
+        this.backgroundColor = backgroundColor;
+    }
 }

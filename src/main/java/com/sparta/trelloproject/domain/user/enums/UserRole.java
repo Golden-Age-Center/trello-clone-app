@@ -1,6 +1,9 @@
 package com.sparta.trelloproject.domain.user.enums;
 
 import java.util.Arrays;
+
+import com.sparta.trelloproject.common.exception.InvalidParameterException;
+import com.sparta.trelloproject.common.exception.ResponseCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -17,7 +20,7 @@ public enum UserRole {
         return Arrays.stream(UserRole.values())
             .filter(r -> r.name().equalsIgnoreCase(role))
             .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 UserRole"));
+            .orElseThrow(() -> new InvalidParameterException(ResponseCode.INVALID_USER_AUTHORITY));
     }
 
     public static class Authority {
