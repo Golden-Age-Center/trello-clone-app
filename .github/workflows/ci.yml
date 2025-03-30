@@ -91,14 +91,6 @@ jobs:
           LOGSTASH_PORT: ${{ secrets.LOGSTASH_PORT }}
         run: ./gradlew test -Dspring.profiles.active=test
 
-  post-process:
-    runs-on: ubuntu-latest
-    needs: [build, test]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
       - name: Register test results as comments in PR
         uses: EnricoMi/publish-unit-test-result-action@v1
         if: always()
@@ -112,3 +104,69 @@ jobs:
         with:
           report_paths: '**/build/test-results/test/TEST-*.xml'
           token: ${{ github.token }}
+
+  notification:
+    needs: [ build, test ]
+    runs-on: ubuntu-latest
+    env:
+      PR_TITLE: ${{ github.event.pull_request.title }}
+
+    if: failure() && (needs.build.result == 'failure' || needs.test.result == 'failure')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Get PR title
+        if: env.PR_TITLE == null
+        run: |
+          echo "PR_TITLE=$(gh pr list --head ${{ github.ref_name }} --json title --jq '.[0].title')" >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: If the jobs fail, send to slack message
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          payload: |
+            {
+              "attachments": [
+                    {
+                      "title": "🚩 PR이 실패했습니다.",
+                      "color": "danger",
+                      "fields": [
+                        {
+                          "title": "PR 제목",
+                          "value": "${{ env.PR_TITLE }}",
+                          "short": true
+                        },
+                        {
+                          "title": "PR 요청자",
+                          "value": "${{ github.actor }}",
+                          "short": true
+                        },
+                        {
+                          "title": "Branch",
+                          "value": "${{github.ref}}",
+                          "short": true
+                        },
+                        {
+                          "title": "Actions URL",
+                          "value": "<${{github.server_url}}/${{github.repository}}/commit/${{github.sha}}/checks|${{github.workflow}}>",
+                          "short": true
+                        },
+                        {
+                          "title": "Commit Link",
+                          "value": "<${{github.server_url}}/${{github.repository}}/commit/${{github.sha}}|Commit Link>",
+                          "short": true
+                        },
+                        {
+                          "title": "커밋 메시지",
+                          "value": "${{github.event.head_commit.message}}",
+                          "short": true
+                        }
+                      ]
+                    }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
